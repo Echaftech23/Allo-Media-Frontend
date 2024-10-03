@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import Input from "../../components/shared/input";
+import PinInput from "react-pin-input";
 import Button from "../../components/shared/button";
 import { Alert, AlertDescription } from "../../components/shared/alert";
 import axiosInstance from "../../api/config/axios";
@@ -13,8 +13,12 @@ const OtpVerification = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [alert, setAlert] = useState({ type: "", message: "" });
 
-  const handleChange = (e) => {
-    setOtp(e.target.value);
+  const handleChange = (value) => {
+    setOtp(value);
+  };
+
+  const handleComplete = (value) => {
+    setOtp(value);
   };
 
   const handleSubmit = async (e) => {
@@ -28,13 +32,19 @@ const OtpVerification = () => {
       });
 
       if (response.data.token) {
-        localStorage.setItem("token", response.data.token);
-        navigate("/dashboard");
+        localStorage.setItem("authToken", response.data.token);
+        setAlert({
+          type: "success",
+          message: "OTP verified successfully. Redirecting to dashboard...",
+        });
+        setTimeout(() => {
+          navigate("/dashboard");
+        }, 2000);
       }
     } catch (error) {
       setAlert({
         type: "error",
-        message: "Invalid OTP. Please try again.",
+        message: error.response?.data?.error || "An error occurred. Please try again.",
       });
     } finally {
       setIsLoading(false);
@@ -54,21 +64,26 @@ const OtpVerification = () => {
         </div>
 
         {alert.message && (
-          <Alert variant={alert.type === "error" ? "destructive" : "default"}>
+          <Alert variant={alert.type === "error" ? "destructive" : "success"}>
             <AlertDescription>{alert.message}</AlertDescription>
           </Alert>
         )}
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-6">
           <div className="space-y-4">
-            <Input
-              type="text"
-              name="otp"
-              label="Enter OTP"
-              value={otp}
+            <PinInput
+              length={6}
+              initialValue=""
               onChange={handleChange}
-              required
-              autoFocus
+              onComplete={handleComplete}
+              type="numeric"
+              inputMode="number"
+              style={{ padding: '10px'}}
+              inputStyle={{ borderColor: 'gray', borderWidth: '1px' , borderRadius: '8px' }}
+              inputFocusStyle={{ borderColor: '#333', borderWidth: '2px' }}
+              autoSelect={true}
+              regexCriteria={/^[0-9]*$/}
+              allowPaste
             />
           </div>
 

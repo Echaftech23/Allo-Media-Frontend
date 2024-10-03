@@ -1,33 +1,36 @@
 import React, { useState, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Input from "../../components/shared/input";
 import Button from "../../components/shared/button";
-import { validateField, validateForm } from "../../utils/validation";
+import { validateField, validateForm, ERROR_MESSAGES } from "../../utils/validation";
+import { Alert, AlertDescription } from "../../components/shared/alert";
+import axiosInstance from "../../api/config/axios";
 
 const Register = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    username: "",
     password: "",
     confirmPassword: "",
     phone: "",
+    role : "client"
   });
 
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [touchedFields, setTouchedFields] = useState({});
+  const [alert, setAlert] = useState({ variant: "", message: "" });
 
   const handleChange = useCallback((e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
 
-    // Clear error when user starts typing
     if (errors[name]) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
         [name]: "",
       }));
@@ -36,14 +39,14 @@ const Register = () => {
 
   const handleBlur = useCallback((e) => {
     const { name, value } = e.target;
-    setTouchedFields(prev => ({
+    setTouchedFields((prev) => ({
       ...prev,
       [name]: true,
     }));
 
     const error = validateField(name, value, formData);
     if (error) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
         [name]: error,
       }));
@@ -52,33 +55,39 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Validate all fields
+
     const formErrors = validateForm(formData);
+    console.log("Form Errors:", formErrors);
     if (Object.keys(formErrors).length > 0) {
       setErrors(formErrors);
-      setTouchedFields(Object.keys(formData).reduce((acc, key) => ({
-        ...acc,
-        [key]: true
-      }), {}));
+      setTouchedFields({
+        email: true,
+        password: true,
+      });
       return;
     }
 
     setIsLoading(true);
     try {
-      // Your API call here
-      console.log("Registration submitted:", formData);
-      
-      // Example API call:
-      // await registerUser(formData);
-      // navigate("/login");
-      
+      const response = await axiosInstance.post("/auth/register", formData);
+
+      if (response.status === 201 && response.data.success) {
+        setAlert({
+          variant: "success",
+          message: response.data.success,
+        });
+      } else {
+        setAlert({
+          variant: "destructive",
+          message: response.data.error || ERROR_MESSAGES.generic,
+        });
+      }
     } catch (error) {
       console.error("Registration failed:", error);
-      setErrors(prev => ({
-        ...prev,
-        submit: "Registration failed. Please try again.",
-      }));
+      setAlert({
+        variant: "destructive",
+        message: error.response?.data?.error || ERROR_MESSAGES.generic,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -102,10 +111,10 @@ const Register = () => {
           </p>
         </div>
 
-        {errors.submit && (
-          <div className="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-            <span className="block sm:inline">{errors.submit}</span>
-          </div>
+        {alert.message && (
+          <Alert variant={alert.variant}>
+            <AlertDescription>{alert.message}</AlertDescription>
+          </Alert>
         )}
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-6">
@@ -169,7 +178,6 @@ const Register = () => {
             type="submit"
             fullWidth
             isLoading={isLoading}
-            // disabled={Object.keys(errors).length > 0}
           >
             {isLoading ? "Creating Account..." : "Create Account"}
           </Button>
