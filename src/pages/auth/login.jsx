@@ -2,11 +2,8 @@ import React, { useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Input from "../../components/shared/input";
 import Button from "../../components/shared/button";
-import {
-  validateField,
-  validateForm,
-  ERROR_MESSAGES,
-} from "../../utils/validation";
+import { validateField, validateForm } from "../../utils/validation";
+import { ERROR_MESSAGES } from "../../constants";
 import { Alert, AlertDescription } from "../../components/shared/alert";
 import axiosInstance from "../../api/config/axios";
 
