@@ -5,59 +5,66 @@ import Button from "../../components/shared/button";
 import { validateField, validateForm } from "../../utils/validation";
 import { ERROR_MESSAGES } from "../../constants";
 import { Alert, AlertDescription } from "../../components/shared/alert";
-import axiosInstance from "../../api/config/axios";
+// import axiosInstance from "../../api/config/axios";
+import { useAuth } from "../../contexts/auth/AuthContext";
 
-const Register = () => {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    phone: "",
-    role : "client"
-  });
+  const Register = () => {
+    const { register } = useAuth();
+    const [formData, setFormData] = useState({
+      name: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+      phone: "",
+      role: "client",
+    });
 
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [touchedFields, setTouchedFields] = useState({});
   const [alert, setAlert] = useState({ variant: "", message: "" });
 
-  const handleChange = useCallback((e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-
-    if (errors[name]) {
-      setErrors((prev) => ({
+  const handleChange = useCallback(
+    (e) => {
+      const { name, value } = e.target;
+      setFormData((prev) => ({
         ...prev,
-        [name]: "",
+        [name]: value,
       }));
-    }
-  }, [errors]);
 
-  const handleBlur = useCallback((e) => {
-    const { name, value } = e.target;
-    setTouchedFields((prev) => ({
-      ...prev,
-      [name]: true,
-    }));
+      if (errors[name]) {
+        setErrors((prev) => ({
+          ...prev,
+          [name]: "",
+        }));
+      }
+    },
+    [errors]
+  );
 
-    const error = validateField(name, value, formData);
-    if (error) {
-      setErrors((prev) => ({
+  const handleBlur = useCallback(
+    (e) => {
+      const { name, value } = e.target;
+      setTouchedFields((prev) => ({
         ...prev,
-        [name]: error,
+        [name]: true,
       }));
-    }
-  }, [formData]);
+
+      const error = validateField(name, value, formData);
+      if (error) {
+        setErrors((prev) => ({
+          ...prev,
+          [name]: error,
+        }));
+      }
+    },
+    [formData]
+  );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     const formErrors = validateForm(formData);
-    console.log("Form Errors:", formErrors);
     if (Object.keys(formErrors).length > 0) {
       setErrors(formErrors);
       setTouchedFields({
@@ -69,24 +76,26 @@ const Register = () => {
 
     setIsLoading(true);
     try {
-      const response = await axiosInstance.post("/auth/register", formData);
+      const result = await register(formData);
 
-      if (response.status === 201 && response.data.success) {
+      console.log("Registration result:", result);
+      
+      if (result.success) {
         setAlert({
           variant: "success",
-          message: response.data.success,
+          message: result.success,
         });
       } else {
         setAlert({
           variant: "destructive",
-          message: response.data.error || ERROR_MESSAGES.generic,
+          message: result.error || ERROR_MESSAGES.generic,
         });
       }
     } catch (error) {
       console.error("Registration failed:", error);
       setAlert({
         variant: "destructive",
-        message: error.response?.data?.error || ERROR_MESSAGES.generic,
+        message: ERROR_MESSAGES.generic,
       });
     } finally {
       setIsLoading(false);
@@ -159,7 +168,9 @@ const Register = () => {
               value={formData.confirmPassword}
               onChange={handleChange}
               onBlur={handleBlur}
-              error={touchedFields.confirmPassword ? errors.confirmPassword : ""}
+              error={
+                touchedFields.confirmPassword ? errors.confirmPassword : ""
+              }
               required
             />
 
@@ -174,11 +185,7 @@ const Register = () => {
             />
           </div>
 
-          <Button
-            type="submit"
-            fullWidth
-            isLoading={isLoading}
-          >
+          <Button type="submit" fullWidth isLoading={isLoading}>
             {isLoading ? "Creating Account..." : "Create Account"}
           </Button>
         </form>

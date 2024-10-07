@@ -7,6 +7,8 @@ import OtpVerification from "../pages/auth/otp-verification";
 import Dashboard from "../pages/manager";
 import NotFound from "../pages/errors/404-error";
 
+import ProtectedRoute from '../components/auth/ProtectedRoute';
+
 const Router = () => {
   return (
     <Routes>
@@ -14,7 +16,15 @@ const Router = () => {
       <Route path="register" element={<Register />} />
       <Route path="login" element={<Login />} />
       <Route path="otp-verification" element={<OtpVerification />} />
-      <Route path="/dashboard" element={<Dashboard />} />
+
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

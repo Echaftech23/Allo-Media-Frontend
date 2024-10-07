@@ -1,4 +1,3 @@
-// Desc: Axios configuration file path api/config/axios.js
 import axios from "axios";
 
 const BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:3000/";
@@ -15,6 +14,10 @@ const axiosInstance = axios.create({
 // Add a request interceptor
 axiosInstance.interceptors.request.use(
   (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     // Do something before request is sent
     console.log("Request sent with config:", config);
     return config;
@@ -34,6 +37,10 @@ axiosInstance.interceptors.response.use(
     return response;
   },
   (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+    }
     // Do something with response error
     console.error("Response error:", error);
     return Promise.reject(error);
