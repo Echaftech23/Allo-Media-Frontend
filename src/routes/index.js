@@ -8,14 +8,17 @@ import Dashboard from "../pages/manager";
 import NotFound from "../pages/errors/404-error";
 
 import ProtectedRoute from '../components/auth/ProtectedRoute';
+import RoleSelection from "../components/auth/RoleSelection";
+import PublicRoute from "../components/auth/PublicRoute";
 
 const Router = () => {
   return (
     <Routes>
       {/*Auth Routes */}
-      <Route path="register" element={<Register />} />
-      <Route path="login" element={<Login />} />
-      <Route path="otp-verification" element={<OtpVerification />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/role-selection" element={<PublicRoute><RoleSelection /></PublicRoute>} />
+      <Route path="/otp-verification" element={<PublicRoute><OtpVerification /></PublicRoute>} />
 
       <Route
         path="/dashboard"

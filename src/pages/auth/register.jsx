@@ -1,23 +1,36 @@
-import React, { useState, useCallback } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect, useCallback } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import Input from "../../components/shared/input";
 import Button from "../../components/shared/button";
 import { validateField, validateForm } from "../../utils/validation";
 import { ERROR_MESSAGES } from "../../constants";
 import { Alert, AlertDescription } from "../../components/shared/alert";
-// import axiosInstance from "../../api/config/axios";
 import { useAuth } from "../../contexts/auth/AuthContext";
 
   const Register = () => {
     const { register } = useAuth();
+    const location = useLocation();
+    const navigate = useNavigate();
     const [formData, setFormData] = useState({
       name: "",
       email: "",
       password: "",
       confirmPassword: "",
       phone: "",
-      role: "client",
+      role: "",
     });
+
+  useEffect(() => {
+    const selectedRole = location.state?.selectedRole;
+    if (!selectedRole) {
+      navigate('/role-selection');
+      return;
+    }
+    setFormData(prev => ({
+      ...prev,
+      role: selectedRole
+    }));
+  }, [location.state, navigate]);
 
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);

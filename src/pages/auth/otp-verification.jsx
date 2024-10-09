@@ -1,14 +1,13 @@
 import React, { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import PinInput from "react-pin-input";
 import Button from "../../components/shared/button";
 import { Alert, AlertDescription } from "../../components/shared/alert";
-import axiosInstance from "../../api/config/axios";
+import { useAuth } from "../../contexts/auth/AuthContext";
 
 const OtpVerification = () => {
-  const location = useLocation();
   const navigate = useNavigate();
-  const { otpToken } = location.state || {};
+  const { verifyOTP, dispatch, state } = useAuth();
   const [otp, setOtp] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [alert, setAlert] = useState({ type: "", message: "" });
@@ -26,25 +25,23 @@ const OtpVerification = () => {
     setIsLoading(true);
 
     try {
-      const response = await axiosInstance.post("/auth/verify-otp", {
-        otp,
-        otpToken,
-      });
+      const result = await verifyOTP(dispatch, state, otp); 
 
-      if (response.data.token) {
-        localStorage.setItem("authToken", response.data.token);
+      if (result.success) {
         setAlert({
           type: "success",
-          message: "OTP verified successfully. Redirecting to dashboard...",
+          message: result.message
         });
         setTimeout(() => {
           navigate("/dashboard");
         }, 2000);
+      } else {
+        throw new Error(result.error || "An error occurred. Please try again.");
       }
     } catch (error) {
       setAlert({
         type: "error",
-        message: error.response?.data?.error || "An error occurred. Please try again.",
+        message: error.message || "An error occurred. Please try again.",
       });
     } finally {
       setIsLoading(false);

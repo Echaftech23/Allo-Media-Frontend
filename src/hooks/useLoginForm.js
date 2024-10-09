@@ -8,15 +8,14 @@ export const useLoginForm = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAuth();
+ 
+  const from = location.state?.from?.pathname || "/";
   
-  const from = location.state?.from?.pathname || "/dashboard";
-
   const [formData, setFormData] = useState({
     email: "",
     password: "",
-
   });
-
+  
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [touchedFields, setTouchedFields] = useState({});
@@ -31,14 +30,20 @@ export const useLoginForm = () => {
         [name]: type === 'checkbox' ? checked : value,
       }));
 
+      // Clear errors when field value changes
       if (errors[name]) {
         setErrors((prev) => ({
           ...prev,
           [name]: "",
         }));
       }
+
+      // Clear alert when user starts typing
+      if (alert.message) {
+        setAlert({ variant: "", message: "" });
+      }
     },
-    [errors]
+    [errors, alert.message]
   );
 
   const handleBlur = useCallback(
@@ -63,6 +68,7 @@ export const useLoginForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Form validation
     const formErrors = validateForm(formData);
     if (Object.keys(formErrors).length > 0) {
       setErrors(formErrors);
@@ -73,6 +79,7 @@ export const useLoginForm = () => {
       return;
     }
 
+    // Check login attempts
     if (loginAttempts >= 5) {
       setAlert({
         variant: "destructive",
@@ -90,22 +97,36 @@ export const useLoginForm = () => {
 
       if (result.success) {
         if (result.requiresOTP) {
-          navigate("/otp-verification", {
-            state: { 
-              otpToken: result.otpToken,
-              email: formData.email
-            }
+          setAlert({
+            variant: "success",
+            message: result.success,
           });
+
+          setTimeout(() => {
+            navigate("/otp-verification", {
+              state: {
+                otpToken: result.otpToken,
+                email: formData.email
+              },
+              replace: true // Use replace to prevent going back to login
+            });
+          }, 1500);
+
           return;
         }
 
         setAlert({
           variant: "success",
-          message: "Login successful! Redirecting..."
+          message: "Login successful. Redirecting ...",
         });
-        
+       
         setLoginAttempts(0);
         
+        setFormData({
+          email: "",
+          password: "",
+        });
+
         setTimeout(() => {
           navigate(from, { replace: true });
         }, 1500);
@@ -114,18 +135,25 @@ export const useLoginForm = () => {
       }
     } catch (error) {
       console.error("Login failed:", error);
-      setLoginAttempts((prev) => prev + 1);
+      
+      const newAttempts = loginAttempts + 1;
+      setLoginAttempts(newAttempts);
 
       setAlert({
         variant: "destructive",
-        message: loginAttempts >= 4
+        message: newAttempts >= 5 
           ? ERROR_MESSAGES.tooManyAttempts
           : error.message || ERROR_MESSAGES.generic
       });
 
-      setFormData((prev) => ({
+      setFormData(prev => ({
         ...prev,
         password: "",
+      }));
+
+      setTouchedFields(prev => ({
+        ...prev,
+        password: true
       }));
     } finally {
       setIsLoading(false);
@@ -141,6 +169,12 @@ export const useLoginForm = () => {
     alert,
     handleChange,
     handleBlur,
-    handleSubmit
+    handleSubmit,
+    resetForm: useCallback(() => {
+      setFormData({ email: "", password: "" });
+      setErrors({});
+      setTouchedFields({});
+      setAlert({ variant: "", message: "" });
+    }, [])
   };
 };
