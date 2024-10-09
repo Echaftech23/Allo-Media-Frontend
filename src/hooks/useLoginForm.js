@@ -7,7 +7,7 @@ import { ERROR_MESSAGES } from '../constants';
 export const useLoginForm = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useAuth();
+  const { login, isLoading } = useAuth();
  
   const from = location.state?.from?.pathname || "/";
   
@@ -17,7 +17,6 @@ export const useLoginForm = () => {
   });
   
   const [errors, setErrors] = useState({});
-  const [isLoading, setIsLoading] = useState(false);
   const [touchedFields, setTouchedFields] = useState({});
   const [loginAttempts, setLoginAttempts] = useState(0);
   const [alert, setAlert] = useState({ variant: "", message: "" });
@@ -25,23 +24,13 @@ export const useLoginForm = () => {
   const handleChange = useCallback(
     (e) => {
       const { name, value, type, checked } = e.target;
-      setFormData((prev) => ({
-        ...prev,
-        [name]: type === 'checkbox' ? checked : value,
-      }));
+      setFormData((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value}));
 
       // Clear errors when field value changes
-      if (errors[name]) {
-        setErrors((prev) => ({
-          ...prev,
-          [name]: "",
-        }));
-      }
+      if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
 
       // Clear alert when user starts typing
-      if (alert.message) {
-        setAlert({ variant: "", message: "" });
-      }
+      if (alert.message) setAlert({ variant: "", message: "" });
     },
     [errors, alert.message]
   );
@@ -49,18 +38,10 @@ export const useLoginForm = () => {
   const handleBlur = useCallback(
     (e) => {
       const { name, value } = e.target;
-      setTouchedFields((prev) => ({
-        ...prev,
-        [name]: true,
-      }));
+      setTouchedFields((prev) => ({ ...prev, [name]: true }));
 
       const error = validateField(name, value, formData);
-      if (error) {
-        setErrors((prev) => ({
-          ...prev,
-          [name]: error,
-        }));
-      }
+      if (error) setErrors((prev) => ({ ...prev, [name]: error}));
     },
     [formData]
   );
@@ -72,10 +53,7 @@ export const useLoginForm = () => {
     const formErrors = validateForm(formData);
     if (Object.keys(formErrors).length > 0) {
       setErrors(formErrors);
-      setTouchedFields({
-        email: true,
-        password: true,
-      });
+      setTouchedFields({ email: true, password: true });
       return;
     }
 
@@ -88,7 +66,6 @@ export const useLoginForm = () => {
       return;
     }
 
-    setIsLoading(true);
     try {
       const result = await login({
         email: formData.email,
@@ -96,13 +73,10 @@ export const useLoginForm = () => {
       });
 
       if (result.success) {
-        if (result.requiresOTP) {
-          setAlert({
-            variant: "success",
-            message: result.success,
-          });
+        if (result.data.require2FA) {
+          setAlert({ variant: "success", message: result.success });
 
-          setTimeout(() => {
+          setTimeout(() => { 
             navigate("/otp-verification", {
               state: {
                 otpToken: result.otpToken,
@@ -120,22 +94,16 @@ export const useLoginForm = () => {
           message: "Login successful. Redirecting ...",
         });
        
-        setLoginAttempts(0);
-        
-        setFormData({
-          email: "",
-          password: "",
-        });
+        setLoginAttempts(0);        
+        setFormData({ email: "", password: "" });
 
         setTimeout(() => {
           navigate(from, { replace: true });
         }, 1500);
-      } else {
-        throw new Error(result.error || ERROR_MESSAGES.generic);
-      }
-    } catch (error) {
-      console.error("Login failed:", error);
+
+      } else throw new Error(result.error);
       
+    } catch (error) {
       const newAttempts = loginAttempts + 1;
       setLoginAttempts(newAttempts);
 
@@ -143,20 +111,11 @@ export const useLoginForm = () => {
         variant: "destructive",
         message: newAttempts >= 5 
           ? ERROR_MESSAGES.tooManyAttempts
-          : error.message || ERROR_MESSAGES.generic
+          : error.message
       });
 
-      setFormData(prev => ({
-        ...prev,
-        password: "",
-      }));
-
-      setTouchedFields(prev => ({
-        ...prev,
-        password: true
-      }));
-    } finally {
-      setIsLoading(false);
+      setFormData(prev => ({ ...prev, password: "", }));
+      setTouchedFields(prev => ({ ...prev, password: true }));
     }
   };
 

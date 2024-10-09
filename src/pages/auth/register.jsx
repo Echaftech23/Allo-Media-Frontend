@@ -7,18 +7,18 @@ import { ERROR_MESSAGES } from "../../constants";
 import { Alert, AlertDescription } from "../../components/shared/alert";
 import { useAuth } from "../../contexts/auth/AuthContext";
 
-  const Register = () => {
-    const { register } = useAuth();
-    const location = useLocation();
-    const navigate = useNavigate();
-    const [formData, setFormData] = useState({
-      name: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-      phone: "",
-      role: "",
-    });
+const Register = () => {
+  const { register, isLoading } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    phone: "",
+    role: "",
+  });
 
   useEffect(() => {
     const selectedRole = location.state?.selectedRole;
@@ -33,7 +33,6 @@ import { useAuth } from "../../contexts/auth/AuthContext";
   }, [location.state, navigate]);
 
   const [errors, setErrors] = useState({});
-  const [isLoading, setIsLoading] = useState(false);
   const [touchedFields, setTouchedFields] = useState({});
   const [alert, setAlert] = useState({ variant: "", message: "" });
 
@@ -87,12 +86,9 @@ import { useAuth } from "../../contexts/auth/AuthContext";
       return;
     }
 
-    setIsLoading(true);
     try {
       const result = await register(formData);
 
-      console.log("Registration result:", result);
-      
       if (result.success) {
         setAlert({
           variant: "success",
@@ -110,8 +106,6 @@ import { useAuth } from "../../contexts/auth/AuthContext";
         variant: "destructive",
         message: ERROR_MESSAGES.generic,
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 

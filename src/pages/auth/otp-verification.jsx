@@ -7,9 +7,8 @@ import { useAuth } from "../../contexts/auth/AuthContext";
 
 const OtpVerification = () => {
   const navigate = useNavigate();
-  const { verifyOTP, dispatch, state } = useAuth();
+  const { verifyOTP, isLoading } = useAuth();
   const [otp, setOtp] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [alert, setAlert] = useState({ type: "", message: "" });
 
   const handleChange = (value) => {
@@ -22,29 +21,18 @@ const OtpVerification = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
-
+  
     try {
-      const result = await verifyOTP(dispatch, state, otp); 
-
+      const result = await verifyOTP(otp);
       if (result.success) {
-        setAlert({
-          type: "success",
-          message: result.message
-        });
-        setTimeout(() => {
-          navigate("/dashboard");
-        }, 2000);
-      } else {
-        throw new Error(result.error || "An error occurred. Please try again.");
+        setAlert({type: "success", message: result.success});
+        setTimeout(() => { navigate("/dashboard");}, 2000);
+      }
+      else {
+        setAlert({type: "error", message: result.error});
       }
     } catch (error) {
-      setAlert({
-        type: "error",
-        message: error.message || "An error occurred. Please try again.",
-      });
-    } finally {
-      setIsLoading(false);
+      setAlert({type: "error", message: error.message });
     }
   };
 
