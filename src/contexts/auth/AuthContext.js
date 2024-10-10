@@ -67,6 +67,24 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const forgotPassword = async (email) => {
+    try {
+      const response = await axiosInstance.post('auth/forgot-password', { email });
+      return { success: response.data.success };
+    } catch (error) { 
+      return { error: error.response?.data?.error || 'An error occurred' };
+    }
+  };
+
+    const resetPassword = async (token, formData) => {
+    try {
+      const response = await axiosInstance.post(`auth/reset-password/${token}`, formData);
+      return { success: response.data.success };
+    } catch (error) {
+      return { error: error.response?.data?.error || 'An error occurred' };
+    }
+  };
+
   const verifyResetToken = async (token) => {
     try {
       const response = await axiosInstance.get(`auth/reset-password/verify?token=${token}`);
@@ -85,6 +103,8 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     verifyOTP,
+    forgotPassword,
+    resetPassword,
     verifyResetToken,
   };
 
